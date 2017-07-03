@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Using fluentd with multiple log targets
-subtitle: Immutable Infrastructure and CI/CD with Jenkins, Docker and Kubernetes
+subtitle: Forward log messages to multiple (Azure) targets with FluentD
 category: dev
 tags: [general, cloud, azure, logging, devops, docker]
 author: Rainer Zehnle
@@ -10,27 +10,36 @@ header-img: "images/new/Exportiert_56.jpg"
 ---
 
 ### Starting point
-This blog post decribes how we are using and configuring [FluentD](http://www.fluentd.org/) to log to multiple target.
-Log sources are the Haufe Wicked API Management itself and several services running behind the APIM gateway.
-The whole stuff is hosted on Azure Public and we use [GoCD](https://www.gocd.org/) and Powershell and Bash scripts for automated deployment.
-Wicked and FluentD are deployed as docker images on an Ubuntu Server V16.04 based virtual machine.
+
+This blog post decribes how we are using and configuring [FluentD](http://www.fluentd.org/) to log to multiple targets.
+Log sources are the [Haufe Wicked API Management](http://wicked.haufe.io/) itself and several services running behind the APIM gateway.
+The whole stuff is hosted on Azure Public and we use [GoCD](https://www.gocd.org/), Powershell and Bash scripts for automated deployment.
+Wicked and FluentD are deployed as docker containers on an Ubuntu Server V16.04 based virtual machine.
 
 ### Log targets
 
 The resulting FluentD image supports these targets:
+
 * [Graylog](https://www.graylog.org/)
 * [Azure Log Analytics](https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-overview) and [Azure Cosmos DB](https://azure.microsoft.com/en-us/services/cosmos-db/)
 * Stdout
 
 ### FluentD Images
+
 #### Initial FluentD image
+
+> Company policies at Haufe require *non-official* Docker images to be build (and pulled) from internal systems (build pipeline and repository). As a consequence, the *initial fluentd* image is "our own" copy of https://github.com/fluent/fluentd-docker-image
+
 Default configurations are to:
+
 * listen port `24224` for Fluentd forward protocol
 * store logs with tag docker.** into /fluentd/log/docker.*.log (and symlink docker.log)
 * store all other logs into /fluentd/log/data.*.log (and symlink data.log)
+
 This image uses Alpine Linux.
 
 Dockerfile:
+
 ```
 FROM alpine:3.4
 MAINTAINER Thomas Schuering <thomas.schuering@haufe-lexware.com>
@@ -80,10 +89,12 @@ CMD exec fluentd -c /fluentd/etc/$FLUENTD_CONF -p /fluentd/plugins $FLUENTD_OPT
 ```
 
 #### Image with Azure plugins
+
 This step builds the FluentD container that contains all the plugins for azure and some other necessary stuff.
 It contains more azure plugins than finally used because we played around with some of them.
 
 **Dockerfile**
+
 ```
 # fluentd base image from Haufe artifactory that contains secure forwareder to central registry (Graylog)
 FROM registry.haufe.io/hgg/fluentd-fwd:active		
@@ -117,9 +128,11 @@ COPY fluent.conf /fluentd/etc/
 ```
 
 #### Image with final configuration
+
 In the last step we add the final configuration and the certificate for central logging (Graylog).
 
 **Dockerfile**
+
 ```
 FROM local/fluentd-base
 
@@ -138,9 +151,11 @@ The configfile is explained in more detail in the following sections.
 ### FluentD configuration
 
 #### Multiple log targets
+
 We use the fluentd copy plugin to support multiple log targets http://docs.fluentd.org/v0.12/articles/out_copy.
 
 #### Ping plugin
+
 The ping plugin was used to send periodically data to the configured targets.That was extremely helpful to check whether the configuration works.
 https://github.com/tagomoris/fluent-plugin-ping-message
 Potentially it can be used as a minimal monitoring source (Heartbeat) whether the FluentD container works.
@@ -161,35 +176,37 @@ It is configured as an additional target.
     remove_keys source
 </filter>
   
-...
-    <store>
-        # log to Haufe Graylog - env vars must be set from extern
-        @type secure_forward
-        self_hostname ${hostname}
-        shared_key    "#{ENV['OUT_SECURE_FORWARD_SHARED_KEY']}"
-        secure yes
-        ca_cert_path /fluentd/certs/ca_cert.pem
-        # enable_strict_verification yes
-        <server>
-            host "#{ENV['OUT_SECURE_FORWARD_HOST']}"
-            port "#{ENV['OUT_SECURE_FORWARD_PORT']}"
-        </server>
-    </store>
+<store>
+	# log to Haufe Graylog - env vars must be set from extern
+	@type secure_forward
+	self_hostname ${hostname}
+	shared_key    "#{ENV['OUT_SECURE_FORWARD_SHARED_KEY']}"
+	secure yes
+	ca_cert_path /fluentd/certs/ca_cert.pem
+	# enable_strict_verification yes
+	<server>
+		host "#{ENV['OUT_SECURE_FORWARD_HOST']}"
+		port "#{ENV['OUT_SECURE_FORWARD_PORT']}"
+	</server>
+</store>
 ```
 
 The necessary Env-Vars must be set in from outside.
 
 #### Azure plugins
+
 Here you can find a list of available Azure plugins for Fluentd http://unofficialism.info/posts/fluentd-plugins-for-microsoft-azure-services/    
 All the used Azure plugins buffer the messages. There is a significant time delay that might vary depending on the amount of messages.
 Do not expect to see results in your Azure resources immediately! Be patient and wait for at least five minutes!
  
 ##### Azure Table Storage
+
 https://github.com/heocoi/fluent-plugin-azuretables   
 We tried the plugin. But we couldn't get it to work cause we couldn't configure the required unique row keys.   
 We can't recommend to use it.
 
 ##### Azure Log Analytics
+
 https://github.com/yokawasa/fluent-plugin-azure-loganalytics   
 This one works fine and we think it offers the best opportunities to analyse the logs and to build meaningful dashboards.
 It is recommended to use this plugin.
@@ -215,6 +232,7 @@ This is the resulting FluentD config section.
 </store>
 ```
 #### Azure DocumentDB
+
 https://github.com/yokawasa/fluent-plugin-documentdb   
 Works fine. Easy to configure. Good starting point to check whether log messages arrive in Azure.
 Follow the instructions from the plugin and it should work.
