@@ -28,17 +28,17 @@ The resulting FluentD image supports these targets:
 
 #### Initial FluentD image
 
-> Company policies at Haufe require *non-official* Docker images to be build (and pulled) from internal systems (build pipeline and repository). As a consequence, the *initial fluentd* image is "our own" copy of https://github.com/fluent/fluentd-docker-image
+> Company policies at Haufe require *non-official* Docker images to be built (and pulled) from internal systems (build pipeline and repository). As a consequence, the *initial fluentd* image is "our own" copy of [github.com/fluent/fluentd-docker-image](https://github.com/fluent/fluentd-docker-image)
 
 Default configurations are to:
 
 * listen port `24224` for Fluentd forward protocol
-* store logs with tag docker.** into /fluentd/log/docker.*.log (and symlink docker.log)
-* store all other logs into /fluentd/log/data.*.log (and symlink data.log)
+* store logs with tag `docker.**` into `/fluentd/log/docker.*.log` (and symlink `docker.log`)
+* store all other logs into `/fluentd/log/data.*.log` (and symlink `data.log`)
 
 This image uses Alpine Linux.
 
-Dockerfile:
+**Dockerfile**:
 
 ```
 FROM alpine:3.4
@@ -93,7 +93,7 @@ CMD exec fluentd -c /fluentd/etc/$FLUENTD_CONF -p /fluentd/plugins $FLUENTD_OPT
 This step builds the FluentD container that contains all the plugins for azure and some other necessary stuff.
 It contains more azure plugins than finally used because we played around with some of them.
 
-**Dockerfile**
+**Dockerfile**:
 
 ```
 # fluentd base image from Haufe artifactory that contains secure forwareder to central registry (Graylog)
@@ -131,7 +131,7 @@ COPY fluent.conf /fluentd/etc/
 
 In the last step we add the final configuration and the certificate for central logging (Graylog).
 
-**Dockerfile**
+**Dockerfile**:
 
 ```
 FROM local/fluentd-base
@@ -152,12 +152,14 @@ The configfile is explained in more detail in the following sections.
 
 #### Multiple log targets
 
-We use the fluentd copy plugin to support multiple log targets http://docs.fluentd.org/v0.12/articles/out_copy.
+We use the fluentd copy plugin to support multiple log targets [http://docs.fluentd.org/v0.12/articles/out_copy](http://docs.fluentd.org/v0.12/articles/out_copy).
 
 #### Ping plugin
 
 The ping plugin was used to send periodically data to the configured targets.That was extremely helpful to check whether the configuration works.
-https://github.com/tagomoris/fluent-plugin-ping-message
+
+* [https://github.com/tagomoris/fluent-plugin-ping-message](https://github.com/tagomoris/fluent-plugin-ping-message)
+
 Potentially it can be used as a minimal monitoring source (Heartbeat) whether the FluentD container works.
 
 #### Graylog
@@ -195,23 +197,29 @@ The necessary Env-Vars must be set in from outside.
 
 #### Azure plugins
 
-Here you can find a list of available Azure plugins for Fluentd http://unofficialism.info/posts/fluentd-plugins-for-microsoft-azure-services/    
+Here you can find a list of available Azure plugins for Fluentd 
+
+* [http://unofficialism.info/posts/fluentd-plugins-for-microsoft-azure-services/](http://unofficialism.info/posts/fluentd-plugins-for-microsoft-azure-services/)
+
 All the used Azure plugins buffer the messages. There is a significant time delay that might vary depending on the amount of messages.
 Do not expect to see results in your Azure resources immediately! Be patient and wait for at least five minutes!
  
 ##### Azure Table Storage
 
-https://github.com/heocoi/fluent-plugin-azuretables   
+[https://github.com/heocoi/fluent-plugin-azuretables](https://github.com/heocoi/fluent-plugin-azuretables)
+
 We tried the plugin. But we couldn't get it to work cause we couldn't configure the required unique row keys.   
 We can't recommend to use it.
 
 ##### Azure Log Analytics
 
-https://github.com/yokawasa/fluent-plugin-azure-loganalytics   
+[https://github.com/yokawasa/fluent-plugin-azure-loganalytics](https://github.com/yokawasa/fluent-plugin-azure-loganalytics)
+
 This one works fine and we think it offers the best opportunities to analyse the logs and to build meaningful dashboards.
 It is recommended to use this plugin.
 You have to create a new Log Analytics resource in your Azure subscription.
-You can reach the Operations Management Suite (OMS) portal under https://<yourname>.portal.mms.microsoft.com/#Workspace/overview/index.
+You can reach the Operations Management Suite (OMS) portal under
+`https://<yourname>.portal.mms.microsoft.com/#Workspace/overview/index`.
 To configure the FluentD plugin you need the shared key and the customer_id/workspace id.
 You can find both values in the OMS Portal in Settings/Connected Resources.
 
@@ -233,7 +241,8 @@ This is the resulting FluentD config section.
 ```
 #### Azure DocumentDB
 
-https://github.com/yokawasa/fluent-plugin-documentdb   
+[https://github.com/yokawasa/fluent-plugin-documentdb](https://github.com/yokawasa/fluent-plugin-documentdb)
+
 Works fine. Easy to configure. Good starting point to check whether log messages arrive in Azure.
 Follow the instructions from the plugin and it should work.
 We created a new DocumentDB (Actually it is a CosmosDB).
