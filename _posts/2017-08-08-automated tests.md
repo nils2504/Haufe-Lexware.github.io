@@ -5,6 +5,7 @@ category: dev
 tags: [automation]
 author: Bianca Carabas
 author_email: bianca-cristina.carabas@haufe-lexware.com
+header-img: "images/new/Exportiert_2.jpg"
 ---
 
 
