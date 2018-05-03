@@ -1,0 +1,30 @@
+---
+layout: post
+title: Think small!
+subtitle: From monolith to serverless using serverless framework
+category: dev
+tags: [serverless, cloud, aws, devops, development]
+author: Nils Rhode
+editor_email: nils.rhode@haufe-lexware.com
+header-img: "images/new/Exportiert_45.jpg"
+---
+
+
+# "Think small!" - From monolith to serverless using serverless framework and AWS
+
+## Intro
+
+The post is about how the HRS team started using serverless computing for building an EDB from scratch.
+EDB stands for "Entscheidungs-Datenbank" and is a component of the big Haufe-Redaktionssystem (HRS).
+
+We started with the challenge to break the monolith into microservices.
+
+## What is serverless?
+
+## Why we decided to go with serverless!
+
+## How we started!
+
+## How to handle such a bundle of functions?
+
+## Some facts about serverless
